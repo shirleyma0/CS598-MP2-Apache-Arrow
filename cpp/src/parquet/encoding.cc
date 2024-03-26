@@ -3182,7 +3182,6 @@ void ASCIIEncoder<DType>::Put(const T* buffer, int num_values) {
     for (int i = 0; i < num_values; i++) {
       double v = buffer[i];
       int64_t val = std::floor((v * 100) + 0.5);
-      std::cout<<v<<std::endl;
       std::vector<char> temp_buffer;
       temp_buffer.emplace_back('\000');
       while (val > 0) {
@@ -3253,17 +3252,37 @@ int ASCIIDecoder<DType>::Decode(T* buffer, int max_values) {
   size_t i = 0;
   size_t idx = 0;
   buffer[idx] = 0;
-  while ((int)idx < max_values) {
-    if (data_[i] == '\000') {
-      idx++;
-      buffer[idx] = 0;
+  if (DType::type_num == Type::INT32 || DType::type_num == Type::INT64) {
+    while ((int)idx < max_values) {
+      if (data_[i] == '\000') {
+        idx++;
+        buffer[idx] = 0;
 
-    } else {
-      buffer[idx] *= 10;
-      buffer[idx] += (data_[i] - '0');
+      } else {
+        buffer[idx] *= 10;
+        buffer[idx] += (data_[i] - '0');
+      }
+      i++;
     }
-    i++;
   }
+  // else if (DType::type_num == Type::Float) {
+  //   std::vector<char> temp;
+  //   char c[40];
+  //   while ((int)idx < max_values) {
+  //     if (data_[i] == '\000') {
+  //       copy(temp.begin(), temp.end(), c);
+  //       double num = std::atof(c); 
+  //       buffer[idx] = num;
+  //       idx++;
+  //       temp.clear();
+
+  //     } else {
+  //       temp.emplace_back(data_[i]);
+  //     }
+  //     i++;
+  //   }
+  // }
+  
   data_ += i;
   len_ -= max_values;
   num_values_ -= max_values;
@@ -4059,8 +4078,8 @@ std::unique_ptr<Decoder> MakeDecoder(Type::type type_num, Encoding::type encodin
       case Type::INT64:
         return std::make_unique<ASCIIDecoder<Int64Type>>(descr);
       // Uncomment this when you finish implementing the float encoder and decoder:
-      // case Type::FLOAT:
-      //   return std::make_unique<ASCIIDecoder<FloatType>>(descr);
+      case Type::FLOAT:
+        return std::make_unique<ASCIIDecoder<FloatType>>(descr);
       default:
         throw ParquetException(
             "ASCII decoder only supports INT32 and INT64");
