@@ -3191,16 +3191,17 @@ void ASCIIEncoder<DType>::Put(const T* buffer, int num_values) {
       }
       for (size_t t =  temp_buffer.size()-1; t > 0; t--) {
         new_buffer.emplace_back(temp_buffer[t]);
-        if (t == 3) new_buffer.emplace_back('.');
+        if (t == 3) {
+          new_buffer.emplace_back('.');
+        }
       }
       new_buffer.emplace_back('\000');
       temp_buffer.clear();
-
     }
     char ret_buffer[new_buffer.size()];
     copy(new_buffer.begin(), new_buffer.end(), ret_buffer);
     if (num_values > 0) {
-      PARQUET_THROW_NOT_OK(sink_.Append(ret_buffer, new_buffer.size() * sizeof(char)));
+      PARQUET_THROW_NOT_OK(sink_.Append(ret_buffer, new_buffer.size()*sizeof(char)));
     }
   }
   
@@ -3266,48 +3267,57 @@ int ASCIIDecoder<DType>::Decode(T* buffer, int max_values) {
     }
   }
   else if (DType::type_num == Type::FLOAT) {
-    std::vector<char> temp;
-    // char c[40];
-    // int8_t char_i = 0;
-    while ((int)idx < max_values) {
-      if (data_[i] == '\000') {
-        // copy(temp.begin(), temp.end(), c);
-        // c[char_i] = data_[i];
-        // char *c = temp.data();
-        // double num = 
-        buffer[idx] = std::atof(temp.data()); 
-        // std::cout << buffer[idx]<< std::endl;
-        idx++;
-        temp.clear();
-        // char_i = 0;
-
-      } else {
-        // c[char_i] = data_[i];
-        temp.emplace_back(data_[i]);
-      }
-      // char_i++;
-      i++;
-    }
-    // float temp_val = 0;
+    // std::vector<char> temp;
+    // // char c[40];
+    // // int8_t char_i = 0;
     // while ((int)idx < max_values) {
     //   if (data_[i] == '\000') {
-    //     buffer[idx] = temp_val;
-    //     std::cout << temp_val<< std::endl;
-    //     temp_val = 0;
+    //     // copy(temp.begin(), temp.end(), c);
+    //     // c[char_i] = data_[i];
+    //     // char *c = temp.data();
+    //     // double num = 
+    //     buffer[idx] = std::atof(temp.data()); 
+    //     // std::cout << buffer[idx]<< std::endl;
     //     idx++;
-        
-    //   } else if (data_[i] == '.') {
-    //     temp_val += (data_[i] - '0')/10;
+    //     temp.clear();
+    //     // char_i = 0;
+
+    //   } else {
+    //     // c[char_i] = data_[i];
+    //     temp.emplace_back(data_[i]);
     //   }
-    //   else if (data_[i-1] == '.') {
-    //     temp_val += (data_[i] - '0')/100;
-    //   }
-    //   else {
-    //     temp_val *= 10;
-    //     temp_val += (data_[i] - '0');
-    //   }
+    //   // char_i++;
     //   i++;
     // }
+    double temp_val = 0;
+    while ((int)idx < max_values) {
+      // std::cout << data_[i]<< std::endl;
+      if (data_[i] == '\000') {
+        if (temp_val!=0) {
+          buffer[idx] = temp_val/100.0;
+        // if (buffer[idx] == 0) {
+        //   idx++;
+        //   continue;
+        // }
+        // std::cout << buffer[idx]<< std::endl;
+        temp_val = 0;
+        // idx++;
+        }
+        idx++;
+        
+      } 
+      // else if (data_[i-1] == '.') {
+      //   temp_val += data_[i] - '0';
+      // }
+      // else if (data_[i-2] == '.') {
+      //   temp_val += double(data_[i] - '0')/100;
+      // }
+      else if (data_[i] != '.')  {
+        temp_val *= 10;
+        temp_val += (data_[i] - '0');
+      }
+      i++;
+    }
 
   }
   
