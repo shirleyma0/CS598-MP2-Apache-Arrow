@@ -3267,51 +3267,16 @@ int ASCIIDecoder<DType>::Decode(T* buffer, int max_values) {
     }
   }
   else if (DType::type_num == Type::FLOAT) {
-    // std::vector<char> temp;
-    // // char c[40];
-    // // int8_t char_i = 0;
-    // while ((int)idx < max_values) {
-    //   if (data_[i] == '\000') {
-    //     // copy(temp.begin(), temp.end(), c);
-    //     // c[char_i] = data_[i];
-    //     // char *c = temp.data();
-    //     // double num = 
-    //     buffer[idx] = std::atof(temp.data()); 
-    //     // std::cout << buffer[idx]<< std::endl;
-    //     idx++;
-    //     temp.clear();
-    //     // char_i = 0;
-
-    //   } else {
-    //     // c[char_i] = data_[i];
-    //     temp.emplace_back(data_[i]);
-    //   }
-    //   // char_i++;
-    //   i++;
-    // }
     double temp_val = 0;
     while ((int)idx < max_values) {
-      // std::cout << data_[i]<< std::endl;
       if (data_[i] == '\000') {
         if (temp_val!=0) {
           buffer[idx] = temp_val/100.0;
-        // if (buffer[idx] == 0) {
-        //   idx++;
-        //   continue;
-        // }
-        // std::cout << buffer[idx]<< std::endl;
         temp_val = 0;
-        // idx++;
         }
         idx++;
         
       } 
-      // else if (data_[i-1] == '.') {
-      //   temp_val += data_[i] - '0';
-      // }
-      // else if (data_[i-2] == '.') {
-      //   temp_val += double(data_[i] - '0')/100;
-      // }
       else if (data_[i] != '.')  {
         temp_val *= 10;
         temp_val += (data_[i] - '0');
