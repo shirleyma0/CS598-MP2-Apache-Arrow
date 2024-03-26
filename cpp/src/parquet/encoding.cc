@@ -3265,23 +3265,23 @@ int ASCIIDecoder<DType>::Decode(T* buffer, int max_values) {
       i++;
     }
   }
-  // else if (DType::type_num == Type::Float) {
-  //   std::vector<char> temp;
-  //   char c[40];
-  //   while ((int)idx < max_values) {
-  //     if (data_[i] == '\000') {
-  //       copy(temp.begin(), temp.end(), c);
-  //       double num = std::atof(c); 
-  //       buffer[idx] = num;
-  //       idx++;
-  //       temp.clear();
+  else if (DType::type_num == Type::FLOAT) {
+    std::vector<char> temp;
+    char c[40];
+    while ((int)idx < max_values) {
+      if (data_[i] == '\000') {
+        copy(temp.begin(), temp.end(), c);
+        double num = std::atof(c); 
+        buffer[idx] = num;
+        idx++;
+        temp.clear();
 
-  //     } else {
-  //       temp.emplace_back(data_[i]);
-  //     }
-  //     i++;
-  //   }
-  // }
+      } else {
+        temp.emplace_back(data_[i]);
+      }
+      i++;
+    }
+  }
   
   data_ += i;
   len_ -= max_values;
