@@ -3155,6 +3155,25 @@ class ASCIIEncoder : public EncoderImpl, virtual public TypedEncoder<DType> {
 template <typename DType>
 void ASCIIEncoder<DType>::Put(const T* buffer, int num_values) {
   // TO BE IMPLEMENTED
+  std::vector<char> new_buffer;
+  for (int i = 0; i < num_values; i++) {
+    int64_t val = buffer[i];
+    new_buffer.emplace_back('\000');
+    while (val > 0)
+    {
+        int digit = val%10;
+        val /= 10;
+        new_buffer.emplace_back(char('0' + digit));
+    }
+    
+  }
+  char ret_buffer[new_buffer.size()];
+  for (size_t j = 0; j < new_buffer.size(); j++) {
+    ret_buffer[j] = new_buffer[new_buffer.size() - j - 1];
+  }
+  if (num_values > 0) {
+    PARQUET_THROW_NOT_OK(sink_.Append(ret_buffer, new_buffer.size() * sizeof(char)));
+  }
 }
 
 // ----------------------------------------------------------------------
@@ -3199,6 +3218,44 @@ class ASCIIDecoder : public DecoderImpl, virtual public TypedDecoder<DType> {
 template <typename DType>
 int ASCIIDecoder<DType>::Decode(T* buffer, int max_values) {
   // TO BE IMPLEMENTED
+  max_values = std::min(max_values, num_values_);
+  //  DecodePlain<T>(data_, len_, max_values, type_length_, buffer);
+  // int64_t bytes_to_decode = max_values * static_cast<int64_t>(sizeof(T));
+  // if (max_values > len_ || bytes_to_decode > INT_MAX) {
+  //   ParquetException::EofException();
+  // }
+  size_t i = 0;
+  // int64_t ret_arr[max_values];
+  size_t idx = 0;
+  buffer[idx] = 0;
+  while ((int)idx < max_values) {
+    // std::cout<< "DATA VALUE at i: " <<data_[i]<<std::endl;
+    if (data_[i] == '\000') {
+      // std::cout<< "RET_ARR at idx: " <<ret_arr[idx]<<std::endl;
+      idx++;
+      // ret_arr[idx] = 0;
+      buffer[idx] = 0;
+
+    } else {
+      // ret_arr[idx] *= 10;
+      // ret_arr[idx] += (data_[i] - '0');
+      buffer[idx] *= 10;
+      buffer[idx] += (data_[i] - '0');
+    }
+    i++;
+  }
+  
+  // if (max_values > 0) {
+  //   memcpy(buffer, ret_arr, idx * sizeof(int32_t));
+  // }
+  for (int t = 0; t < max_values; t++)
+    std::cout<< buffer[t] <<',';
+    // std::cout << "BUFFER at idx: " << i << std::endl;
+  // int bytes_consumed = i - 1;
+  data_ += i;
+  len_ -= max_values;
+  num_values_ -= max_values;
+  return max_values;
 }
 
 // ----------------------------------------------------------------------
