@@ -3156,24 +3156,58 @@ template <typename DType>
 void ASCIIEncoder<DType>::Put(const T* buffer, int num_values) {
   // TO BE IMPLEMENTED
   std::vector<char> new_buffer;
-  for (int i = 0; i < num_values; i++) {
-    int64_t val = buffer[i];
-    new_buffer.emplace_back('\000');
-    while (val > 0)
-    {
-        int digit = val%10;
-        val /= 10;
-        new_buffer.emplace_back(char('0' + digit));
+  if (DType::type_num == Type::INT32 || DType::type_num == Type::INT64) {
+    for (int i = 0; i < num_values; i++) {
+        int64_t val = buffer[i];
+        std::vector<char> temp_buffer;
+        temp_buffer.emplace_back('\000');
+        while (val > 0)
+        {
+            int digit = val%10;
+            val /= 10;
+            temp_buffer.emplace_back(char('0' + digit));
+        }
+        for (size_t t =  temp_buffer.size()-1; t > 0; t--) {
+          new_buffer.emplace_back(temp_buffer[t]);
+          // std::cout << "BUFFERY COPY??: "<< temp_buffer[t] << std::endl;
+        }
+        new_buffer.emplace_back('\000');
+        
+      }
+      char ret_buffer[new_buffer.size()];
+      copy(new_buffer.begin(), new_buffer.end(), ret_buffer);
+      // for (size_t j = 0; j < new_buffer.size(); j++) {
+      //   ret_buffer[j] = new_buffer[new_buffer.size() - j - 1];
+      // }
+      if (num_values > 0) {
+        PARQUET_THROW_NOT_OK(sink_.Append(ret_buffer, new_buffer.size() * sizeof(char)));
+      }
+  }
+  else if (DType::type_num == Type::FLOAT) {
+    for (int i = 0; i < num_values; i++) {
+       float val = buffer[i];
+      //  std::cout << val << std::endl;
+       val = roundf(buffer[i] * 100) / 100.0;
+      //  std::cout << val << std::endl;
+      //  sprintf(str, "%.2f", buffer[i]);
+       int temp_count = 0;
+       for(auto c: std::to_string(val)) {
+        if(temp_count > 2)
+        if (c == '.') {
+          temp_count++;
+        }
+        new_buffer.emplace_back(c);
+       }
+       new_buffer.emplace_back('\000');
+
     }
-    
+    char ret_buffer[new_buffer.size()];
+    copy(new_buffer.begin(), new_buffer.end(), ret_buffer);
+    if (num_values > 0) {
+      PARQUET_THROW_NOT_OK(sink_.Append(ret_buffer, new_buffer.size() * sizeof(char)));
+    }
   }
-  char ret_buffer[new_buffer.size()];
-  for (size_t j = 0; j < new_buffer.size(); j++) {
-    ret_buffer[j] = new_buffer[new_buffer.size() - j - 1];
-  }
-  if (num_values > 0) {
-    PARQUET_THROW_NOT_OK(sink_.Append(ret_buffer, new_buffer.size() * sizeof(char)));
-  }
+  
 }
 
 // ----------------------------------------------------------------------
@@ -3231,7 +3265,7 @@ int ASCIIDecoder<DType>::Decode(T* buffer, int max_values) {
   while ((int)idx < max_values) {
     // std::cout<< "DATA VALUE at i: " <<data_[i]<<std::endl;
     if (data_[i] == '\000') {
-      // std::cout<< "RET_ARR at idx: " <<ret_arr[idx]<<std::endl;
+      // std::cout<< "RET_ARR at idx: " <<buffer[idx]<<std::endl;
       idx++;
       // ret_arr[idx] = 0;
       buffer[idx] = 0;
@@ -3248,8 +3282,8 @@ int ASCIIDecoder<DType>::Decode(T* buffer, int max_values) {
   // if (max_values > 0) {
   //   memcpy(buffer, ret_arr, idx * sizeof(int32_t));
   // }
-  for (int t = 0; t < max_values; t++)
-    std::cout<< buffer[t] <<',';
+  // for (int t = 0; t < max_values; t++)
+  //   std::cout<< buffer[t] <<',';
     // std::cout << "BUFFER at idx: " << i << std::endl;
   // int bytes_consumed = i - 1;
   data_ += i;
